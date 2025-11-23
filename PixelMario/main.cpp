@@ -33,15 +33,30 @@ void processInput(GLFWwindow* window) {
 	}
 }
 int main() {
+	/*
+	* Vertex data is stored in gpu memory
+	* We can manage this memory with VBO
+	* VBO can store large number of vertices in gpu memory
+	* Once the vertices data is in gpu memory the vertex shader has instant access
+	* to those vertices making it faster
+	*/
 	//define Vertex buffer object
 	unsigned int VBO;
+	//define Vertex array object
 	unsigned int VAO;
+	//triangle coordinates on NDC plane
 	float vertices[] = {
 		//x,y,z
 		//NDC coordinates
-		-0.5f, -0.5f, 0.0f,
-		 0.5f, -0.5f, 0.0f,
-		 0.0f,  0.5f, 0.0f
+		//first triangle
+		-0.5, 0.5, 0.0,
+		-0.5,-0.5, 0.0,
+		0.5,-0.5,0.0,
+
+		//second triangle
+		0.5,0.5,0.0,
+		-0.5,0.5,0.0,
+		0.5,-0.5,0.0
 	};
 	glfwInit();
 
@@ -62,15 +77,24 @@ int main() {
 		std::cout << "Failed to initialize GLAD" << std::endl;
 		return -1;
 	}
+	//generate buffer id for VAO
 	glGenVertexArrays(1, &VAO);
 	glBindVertexArray(VAO);
+
+
+
 
 	//generate buffer id for vbo
 	glGenBuffers(1, &VBO);
 
+	
 	//vbo buffer type is GL_ARRAY_BUFFER
 	//bind vbo to GL_ARRAY_BUFFER using glBindBuffer
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBindBuffer(
+
+		GL_ARRAY_BUFFER, //the current active slot for vertex data
+		VBO //vertex buffer object
+	);
 
 	//remember currently bound buffer is VBO
 	//copy vertex data into buffer memory using glBufferData
@@ -79,7 +103,13 @@ int main() {
 		GL_STATIC_DRAW: the data is set only once and used many times.
 		GL_DYNAMIC_DRAW: the data is changed a lot and used many times.
 	*/
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+	//after glBufferData the gpu now has it's own fast copy of vertices
+	glBufferData(
+		GL_ARRAY_BUFFER, 
+		sizeof(vertices), 
+		vertices, 
+		GL_STATIC_DRAW
+	);
 
 	//we successfully stored vertex data on gpu memory!
 	//now let's build the vertex and fragment shader
@@ -106,6 +136,7 @@ int main() {
 	}
 	std::cout << "SUCCESS::SHADER::VERTEX::COMPILATION_COMPLETED\n" << std::endl;
 #pragma endregion
+
 #pragma region FragmentShader
 	//now let's build the fragment shader
 	fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
@@ -120,6 +151,9 @@ int main() {
 	}
 	std::cout << "SUCCESS::SHADER::FRAGMENT::COMPILATION_COMPLETED\n" << std::endl;
 #pragma endregion
+
+
+#pragma region ShaderProgram
 	//now let's create a shader program to link shaders
 	/*
 		When linking the shaders into a program it links the outputs of each shader to the inputs of the next shader.
@@ -147,7 +181,7 @@ int main() {
 	}
 
 	std::cout << "SUCCESS::SHADER::COMPILATION::LINKING_COMPLETED\n" << std::endl;
-
+#pragma endregion
 	//if the linking is successful now we can use the linked program
 	//glUseProgram is the one for the job
 	glUseProgram(shaderProgram);
@@ -159,6 +193,9 @@ int main() {
 	*/
 	glDeleteShader(vertexShader);
 	glDeleteShader(fragmentShader);
+
+
+
 	/*
 	* now let's tell the opengl how it should interpret the vertex data in memory
 	* and how it should connect the vertex data to the vertex shader attributes
@@ -192,6 +229,7 @@ int main() {
 	* bytes 12-23 -> vertex 2 position -> send to location 0 -> becomes aPos
 	* bytes 24-35 -> vertex 3 position -> send to location 0 -> becomes aPos
 	*/
+	//it's just here for some unknown reason 
 	glEnableVertexAttribArray(0);
 
 	while (!glfwWindowShouldClose(window))
@@ -204,7 +242,7 @@ int main() {
 		glClear(GL_COLOR_BUFFER_BIT);
 		glUseProgram(shaderProgram);
 		glBindVertexArray(VAO);
-		glDrawArrays(GL_TRIANGLES, 0, 3);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
 		//isko ase he chalne do ye adha samjh aya hai abhi
 		glfwSwapBuffers(window);
 		glfwPollEvents();
